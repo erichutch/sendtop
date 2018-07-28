@@ -1,0 +1,41 @@
+#!/bin/env bash
+# nagiossendtop
+# In /usr/local/libexec/nagiossendtop
+# Eric H
+# This is working for Linux CentOS6. 02/03/2018 Tue
+# Remote agent config file. 
+# Be sure to chown to correct owner and group nagios:nagios.
+# Basic idea is to accept $1 from Nagios XI check_nrpe to a host with a copy of 
+# the cmd on a remote server.
+# i.e.: 
+# Command line: /usr/local/nagios/libexec/nagiossendtop $ARG1$ as the process.
+# less /tmp/sendtop.txt and check the output.
+# Run ./nagiossendtop snmpd
+# Web: Configure, CCM, Commands
+# 
+# Run the command top and test exit codes.
+# Dns can use IP Address.
+# Only sends alternate and Nagios XI emails if a remote host is in 
+# a Problem or Reovery state.
+# But, only alternative nagios user does not send recovery, yet, only Problem..
+# https://upladevnag01v
+# Tested by setting as check command for running checks and then set to 
+# Misc for event handler.
+# Make and rename copies and set them in server and on the agent for individual
+# top commands. 
+# edit file /usr/local/nagios/etc/nrpe.cfg with the command under 
+### MISC SYSTEM METRICS ###
+#command[nagiossendtop]=/usr/local/nagios/libexec/nagiossendtop $ARG1$
+# change nagiossendtop to check_top or yourfilename if needed.
+# need to continue with event_handler as a misc command and add the 
+# free variables in CCM: _pr name of process to check or email or restart, etc.
+
+pr=$1
+/usr/bin/top -bn 1 | grep -i "$pr" 
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+/usr/bin/top -bn 1 | grep -i $pr | echo "There is no process" $pr > /tmp/sendtop.txt
+mailx -s "Nagios top Process `hostname` " ehutchison@researchnow.com < /tmp/sendtop.txt
+fi
+exit 0
+#mail -s "Nagios single top process `hostname` " tsteadman@researchnow.com < /tmp/sendtop.txt
